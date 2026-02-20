@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/*
+ * PrivateClaw Design System
+ * Dark trading terminal aesthetic.
+ * All colors are HSL. Do not use raw hex/rgb in components.
+ */
+
+@layer base {
+  :root {
+    /* Core surfaces */
+    --background:        222 28% 6%;
+    --foreground:        210 18% 93%;
+
+    --card:              222 24% 9%;
+    --card-foreground:   210 18% 93%;
+
+    --popover:           222 24% 9%;
+    --popover-foreground:210 18% 93%;
+
+    /* Brand — deep violet */
+    --primary:           262 78% 58%;
+    --primary-foreground:0 0% 100%;
+
+    /* Neutral surfaces */
+    --secondary:         222 20% 14%;
+    --secondary-foreground:210 14% 78%;
+
+    --muted:             222 20% 12%;
+    --muted-foreground:  215 12% 48%;
+
+    /* Buy side — emerald green */
+    --accent:            158 64% 42%;
+    --accent-foreground: 158 80% 96%;
+
+    /* Sell side / danger — red */
+    --destructive:       0 70% 52%;
+    --destructive-foreground:0 0% 100%;
+
+    --border:            222 18% 16%;
+    --input:             222 18% 14%;
+    --ring:              262 78% 58%;
+
+    --radius: 0.5rem;
+
+    /* Trading-specific semantic tokens */
+    --buy:               158 64% 42%;
+    --buy-muted:         158 64% 42% / 0.12;
+    --buy-foreground:    158 80% 96%;
+    --sell:              0 70% 52%;
+    --sell-muted:        0 70% 52% / 0.12;
+    --sell-foreground:   0 0% 100%;
+    --spread:            45 90% 52%;
+
+    /* Sidebar */
+    --sidebar-background:  222 28% 5%;
+    --sidebar-foreground:  210 14% 78%;
+    --sidebar-primary:     262 78% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent:      222 20% 12%;
+    --sidebar-accent-foreground: 262 78% 58%;
+    --sidebar-border:      222 18% 13%;
+    --sidebar-ring:        262 78% 58%;
+
+    /* Glow values */
+    --glow-primary:  262 78% 58%;
+    --glow-buy:      158 64% 42%;
+    --grid-color:    222 18% 14%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+  }
+  code, pre, .tabular-nums {
+    font-family: 'JetBrains Mono', Menlo, monospace;
+  }
+}
+
+@layer utilities {
+  /* Brand gradient: violet → green */
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Buy / sell colour helpers */
+  .text-buy  { color: hsl(var(--buy));  }
+  .text-sell { color: hsl(var(--sell)); }
+  .bg-buy    { background-color: hsl(var(--buy)  / 0.12); }
+  .bg-sell   { background-color: hsl(var(--sell) / 0.12); }
+  .border-buy  { border-color: hsl(var(--buy)  / 0.3); }
+  .border-sell { border-color: hsl(var(--sell) / 0.3); }
+
+  /* Subtle dot grid */
+  .bg-grid {
+    background-image:
+      linear-gradient(hsl(var(--grid-color) / 0.5) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--grid-color) / 0.5) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* Card hover lift */
+  .card-glow {
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .card-glow:hover {
+    box-shadow: 0 0 28px hsl(var(--glow-primary) / 0.2), 0 8px 32px hsl(0 0% 0% / 0.45);
+    transform: translateY(-2px);
+  }
+
+  /* Privacy shield pulse */
+  .animate-pulse-privacy {
+    animation: privacy-pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes privacy-pulse {
+    0%, 100% { opacity: 0.4; transform: scale(1);   }
+    50%       { opacity: 1;   transform: scale(1.15); }
+  }
+
+  /* Redacted block for hidden order sizes */
+  .redacted {
+    display: inline-block;
+    background: hsl(var(--muted));
+    color: transparent;
+    border-radius: 3px;
+    user-select: none;
+    min-width: 3rem;
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+  .animate-fade-in { animation: fade-in 0.35s ease-out; }
+}

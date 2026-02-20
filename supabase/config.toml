@@ -1,0 +1,7 @@
+project_id = "jafrqebkpwehmamdygud"
+
+[functions.ai-trading-assistant]
+verify_jwt = false
+
+[functions.ai-trading-chat]
+verify_jwt = false
