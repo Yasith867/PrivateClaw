@@ -25,7 +25,7 @@ export function BettingModal() {
     setUserBets,
   } = useAppStore();
 
-  const { connected, address, requestTransaction } = useAleoWallet();
+  const { connected, address, executeTransaction } = useAleoWallet();
   const { toast } = useToast();
 
   const [side, setSide] = useState<OrderSide>('buy');
@@ -51,16 +51,12 @@ export function BettingModal() {
 
   const handleSubmit = async () => {
     if (!connected || !address || !pair) return;
-    if (!requestTransaction) {
-      toast({ title: 'Wallet not ready', description: 'Please ensure Leo Wallet is connected.', variant: 'destructive' });
-      return;
-    }
     setIsSubmitting(true);
 
     try {
       const priceNum = parseFloat(price) || pair.lastPrice;
 
-      const transaction = aleoService.createPlaceOrderTransaction(
+      const txOptions = aleoService.createPlaceOrderTransaction(
         address,
         aleoService.generatePairId(),
         side,
@@ -68,8 +64,8 @@ export function BettingModal() {
         priceNum,
       );
 
-      // Triggers the real Leo Wallet popup — user must sign/approve
-      const resultTxId = await requestTransaction(transaction);
+      const result = await executeTransaction(txOptions);
+      const resultTxId = result?.transactionId ?? null;
       setTxId(resultTxId);
 
       const newOrder: Order = {
@@ -114,14 +110,14 @@ export function BettingModal() {
             Place Order{pair ? ` — ${pair.title}` : ''}
           </DialogTitle>
           <DialogDescription>
-            Order is submitted to Aleo Testnet Beta via Leo Wallet.
+            Order is submitted to Aleo Testnet via Shield Wallet.
           </DialogDescription>
         </DialogHeader>
 
         {!connected ? (
           <div className="py-6 text-center space-y-4">
             <AlertTriangle className="h-12 w-12 text-yellow-400 mx-auto" />
-            <p className="text-muted-foreground">Connect your Leo Wallet to place orders.</p>
+            <p className="text-muted-foreground">Connect your Shield Wallet to place orders.</p>
           </div>
         ) : txId ? (
           <div className="py-4 space-y-4">
@@ -221,7 +217,7 @@ export function BettingModal() {
             <div className="flex items-start gap-2 p-3 rounded-md bg-primary/5 border border-primary/15 text-xs text-muted-foreground">
               <Shield className="h-4 w-4 text-primary shrink-0 mt-0.5" />
               <span>
-                Leo Wallet will open to approve this <strong className="text-primary">place_order</strong> transaction. Size &amp; identity stay hidden on-chain.
+                Shield Wallet will open to approve this <strong className="text-primary">place_bet</strong> transaction. Size &amp; identity stay hidden on-chain.
               </span>
             </div>
 

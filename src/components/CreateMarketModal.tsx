@@ -35,7 +35,7 @@ type FormValues = z.infer<typeof schema>;
 
 export function CreateMarketModal() {
   const { isCreateMarketModalOpen, setCreateMarketModalOpen, markets, setMarkets } = useAppStore();
-  const { connected: walletConnected, address: walletAddress, requestTransaction } = useAleoWallet();
+  const { connected: walletConnected, address: walletAddress, executeTransaction } = useAleoWallet();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
@@ -52,21 +52,21 @@ export function CreateMarketModal() {
   };
 
   const onSubmit = async (data: FormValues) => {
-    if (!walletConnected || !walletAddress || !requestTransaction) return;
+    if (!walletConnected || !walletAddress) return;
     setIsSubmitting(true);
 
     try {
       const price = parseFloat(data.initialPrice) || 1;
       const pairIdRaw = aleoService.generatePairId();
 
-      const transaction = aleoService.createListPairTransaction(
+      const txOptions = aleoService.createListPairTransaction(
         walletAddress,
         pairIdRaw,
-        2 // buy + sell
+        2
       );
 
-      // Triggers real Leo Wallet popup
-      const resultTxId = await requestTransaction(transaction);
+      const result = await executeTransaction(txOptions);
+      const resultTxId = result?.transactionId ?? null;
       setTxId(resultTxId);
 
       const newPair: TradingPair = {

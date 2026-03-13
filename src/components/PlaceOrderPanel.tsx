@@ -19,7 +19,7 @@ interface Props {
 
 export function PlaceOrderPanel({ pair, initialPrice, initialSide = 'buy' }: Props) {
   const { userBets, setUserBets } = useAppStore();
-  const { connected, address, requestTransaction } = useAleoWallet();
+  const { connected, address, executeTransaction } = useAleoWallet();
   const { toast } = useToast();
 
   const [side, setSide] = useState<OrderSide>(initialSide);
@@ -39,16 +39,10 @@ export function PlaceOrderPanel({ pair, initialPrice, initialSide = 'buy' }: Pro
 
   const handleSubmit = async () => {
     if (!connected || !address || !priceNum || !amountNum) return;
-    if (!requestTransaction) {
-      toast({ title: 'Wallet not ready', description: 'Please ensure Leo Wallet is connected.', variant: 'destructive' });
-      return;
-    }
     setIsSubmitting(true);
 
     try {
-      // Use the actual pair.id (NOT a random ID) so the Leo contract
-      // can look up the market. generatePairId() was incorrectly used here.
-      const transaction = aleoService.createPlaceOrderTransaction(
+      const txOptions = aleoService.createPlaceOrderTransaction(
         address,
         pair.id,
         side,
@@ -56,8 +50,8 @@ export function PlaceOrderPanel({ pair, initialPrice, initialSide = 'buy' }: Pro
         priceNum,
       );
 
-      // This triggers the real Leo Wallet popup — user must approve
-      const txId = await requestTransaction(transaction);
+      const result = await executeTransaction(txOptions);
+      const txId = result?.transactionId ?? undefined;
 
       const newOrder: Order = {
         id: `order-${Date.now()}`,
@@ -83,15 +77,7 @@ export function PlaceOrderPanel({ pair, initialPrice, initialSide = 'buy' }: Pro
         description: `TX: ${txId?.slice(0, 20)}… — awaiting Aleo Testnet confirmation.`,
       });
     } catch (err: unknown) {
-      // Log the full error chain so we can see the exact RPC rejection reason
       console.error('[PlaceOrderPanel] Transaction failed:', err);
-      if (err && typeof err === 'object') {
-        // Leo Wallet often wraps the real error in cause or data
-        const e = err as Record<string, unknown>;
-        if (e.cause) console.error('[PlaceOrderPanel] cause:', e.cause);
-        if (e.data)  console.error('[PlaceOrderPanel] data:', e.data);
-        if (e.error) console.error('[PlaceOrderPanel] error field:', e.error);
-      }
       const message =
         err instanceof Error
           ? err.message
@@ -200,7 +186,7 @@ export function PlaceOrderPanel({ pair, initialPrice, initialSide = 'buy' }: Pro
       <div className="flex items-start gap-2 p-2.5 rounded-md bg-primary/5 border border-primary/15 text-[10px] text-muted-foreground">
         <Shield className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
       <span>
-          This order is submitted via <strong className="text-primary">place_bet</strong> transition on Aleo Testnet Beta. Leo Wallet will prompt you to approve.
+          This order is submitted via <strong className="text-primary">place_bet</strong> transition on Aleo Testnet. Shield Wallet will prompt you to approve.
         </span>
       </div>
 

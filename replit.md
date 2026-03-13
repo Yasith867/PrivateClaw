@@ -8,7 +8,7 @@ PrivateClaw is a privacy-first DEX (decentralized exchange) built on the Aleo bl
 
 - **Frontend**: React + Vite (TypeScript), runs on port 5000
 - **API Server**: Express.js, runs on port 3001 — serves AI trading assistant endpoints
-- **Blockchain**: Aleo Testnet Beta via `@demox-labs/aleo-wallet-adapter` (Leo Wallet)
+- **Blockchain**: Aleo Testnet via `@provablehq/aleo-wallet-adaptor-shield` (Shield Wallet)
 - **State Management**: Zustand
 - **UI**: shadcn/ui + Tailwind CSS + Radix UI
 - **Charts**: lightweight-charts (TradingView-style price charts)

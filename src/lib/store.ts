@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Market, Bet, MarketFilters, PortfolioStats, Order, TradingPair } from '@/lib/schema';
 
-// Wallet state is now owned by the real @demox-labs/aleo-wallet-adapter-react SDK.
+// Wallet state is now owned by @provablehq/aleo-wallet-adaptor-react (Shield Wallet).
 // Use useAleoWallet() from WalletProvider.tsx for wallet access.
 // This store only manages UI state, orders, pairs, and modals.
 

@@ -111,7 +111,7 @@ export default function HomePage() {
         <h2 className="text-xl font-bold mb-6 text-center">How It Works</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
           {[
-            { step: '01', title: 'Connect Your Wallet', desc: 'Link your Leo wallet. Your address and balances remain private via Aleo ZK proofs.' },
+            { step: '01', title: 'Connect Your Wallet', desc: 'Link your Shield Wallet. Your address and balances remain private via Aleo ZK proofs.' },
             { step: '02', title: 'Place a Private Order', desc: 'Submit buy or sell orders. Order sizes are encrypted — only aggregated price levels are visible.' },
             { step: '03', title: 'Settle Trustlessly', desc: 'Matched orders settle via ZK transitions on Aleo. No custody, no exposure, no middlemen.' },
           ].map(({ step, title, desc }) => (

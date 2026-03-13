@@ -79,7 +79,7 @@ function renderInline(text: string): React.ReactNode {
 }
 
 export function AITradingAssistant({ pair, orderBook, myOrders }: Props) {
-  const { connected, address, requestTransaction } = useAleoWallet();
+  const { connected, address, executeTransaction } = useAleoWallet();
   const { userBets, setUserBets } = useAppStore();
   const { toast } = useToast();
 
@@ -247,8 +247,8 @@ export function AITradingAssistant({ pair, orderBook, myOrders }: Props) {
 
   // ── Approve suggestion ─────────────────────────────────────────────────────
   const handleApprove = async (suggestion: TradeSuggestion, index: number) => {
-    if (!connected || !address || !requestTransaction) {
-      toast({ title: 'Wallet not connected', description: 'Connect Leo Wallet to execute.', variant: 'destructive' });
+    if (!connected || !address) {
+      toast({ title: 'Wallet not connected', description: 'Connect Shield Wallet to execute.', variant: 'destructive' });
       return;
     }
     if (suggestion.action === 'hold') {
@@ -261,8 +261,9 @@ export function AITradingAssistant({ pair, orderBook, myOrders }: Props) {
         const side   = suggestion.side ?? 'buy';
         const price  = suggestion.price ?? pair.lastPrice;
         const amount = suggestion.amount ?? 500_000;
-        const tx     = aleoService.createPlaceOrderTransaction(address, aleoService.generatePairId(), side, amount, price);
-        const txId   = await requestTransaction(tx);
+        const txOptions = aleoService.createPlaceOrderTransaction(address, aleoService.generatePairId(), side, amount, price);
+        const result = await executeTransaction(txOptions);
+        const txId = result?.transactionId ?? undefined;
         const newOrder: Order = {
           id: `order-ai-${Date.now()}`, marketId: pair.id, pairId: pair.id,
           outcomeId: side, side: side as OrderSide, price, amount, filledAmount: 0,
@@ -276,8 +277,8 @@ export function AITradingAssistant({ pair, orderBook, myOrders }: Props) {
           ? myOrders.find(o => o.id === suggestion.orderId)
           : myOrders.find(o => o.orderStatus === 'open');
         if (!targetOrder) { toast({ title: 'No open order to cancel', variant: 'destructive' }); return; }
-        const tx = aleoService.createCancelOrderTransaction(address, targetOrder.id);
-        await requestTransaction(tx);
+        const txOptions = aleoService.createCancelOrderTransaction(address, targetOrder.id);
+        await executeTransaction(txOptions);
         setUserBets((userBets as Order[]).map(o =>
           o.id === targetOrder.id ? { ...o, orderStatus: 'cancelled' as const, isSettled: true } : o
         ) as Order[]);

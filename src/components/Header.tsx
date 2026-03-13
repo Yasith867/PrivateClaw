@@ -69,7 +69,7 @@ export function Header() {
               </Button>
             )}
 
-            {/* Real Aleo wallet button — triggers Leo Wallet popup */}
+            {/* Aleo wallet button — triggers Shield Wallet */}
             <div className="hidden sm:flex">
               <WalletButton />
             </div>
