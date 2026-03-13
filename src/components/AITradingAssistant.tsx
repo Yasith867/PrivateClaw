@@ -374,7 +374,7 @@ export function AITradingAssistant({ pair, orderBook, myOrders }: Props) {
             <div className="px-4 pb-4 pt-3 space-y-3">
               <div className="flex items-start gap-2 p-2 rounded-md bg-primary/5 border border-primary/15 text-[10px] text-muted-foreground">
                 <Shield className="h-3 w-3 text-primary shrink-0 mt-0.5" />
-                <span>AI never executes automatically. Every action requires your Leo Wallet signature.</span>
+                <span>AI never executes automatically. Every action requires your Shield Wallet signature.</span>
               </div>
 
               {loading && (
