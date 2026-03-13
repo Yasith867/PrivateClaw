@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "Sf_350-TFpilwSDb-hoVd"
+uri = "file://README.md"
+type = "text"
+title = "PrivateClaw README"
