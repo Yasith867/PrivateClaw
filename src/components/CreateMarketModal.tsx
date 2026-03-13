@@ -109,8 +109,11 @@ export function CreateMarketModal() {
         if (e.data)  console.error('[CreateMarketModal] data:', e.data);
         if (e.error) console.error('[CreateMarketModal] error field:', e.error);
       }
-      const message =
-        err instanceof Error ? err.message
+      const name = (err as any)?.name ?? '';
+      const isNotInstalled = name === 'WalletNotReadyError' || name === 'WalletNotSelectedError';
+      const message = isNotInstalled
+        ? 'Shield Wallet extension is not installed. Please install it from shieldwallet.app and connect before continuing.'
+        : err instanceof Error ? err.message
         : typeof err === 'string' ? err
         : 'Transaction rejected or failed.';
       toast({ title: 'Failed to list pair', description: message, variant: 'destructive' });

@@ -92,7 +92,11 @@ export function BettingModal() {
         description: `TX: ${resultTxId?.slice(0, 20)}… — pending Aleo Testnet confirmation.`,
       });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Transaction rejected or failed.';
+      const name = (err as any)?.name ?? '';
+      const isNotInstalled = name === 'WalletNotReadyError' || name === 'WalletNotSelectedError';
+      const message = isNotInstalled
+        ? 'Shield Wallet extension is not installed. Please install it from shieldwallet.app and connect before trading.'
+        : err instanceof Error ? err.message : 'Transaction rejected or failed.';
       toast({ title: 'Order failed', description: message, variant: 'destructive' });
       setIsSubmitting(false);
     }

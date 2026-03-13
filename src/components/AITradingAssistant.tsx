@@ -286,7 +286,15 @@ export function AITradingAssistant({ pair, orderBook, myOrders }: Props) {
       }
       setSuggestions(prev => prev.filter((_, i) => i !== index));
     } catch (err) {
-      toast({ title: 'Execution failed', description: err instanceof Error ? err.message : 'Rejected.', variant: 'destructive' });
+      const name = (err as any)?.name ?? '';
+      const isNotInstalled = name === 'WalletNotReadyError' || name === 'WalletNotSelectedError';
+      toast({
+        title: 'Execution failed',
+        description: isNotInstalled
+          ? 'Shield Wallet extension is not installed. Please install it from shieldwallet.app and connect before executing.'
+          : err instanceof Error ? err.message : 'Transaction rejected or failed.',
+        variant: 'destructive',
+      });
     } finally {
       setExecutingId(null);
     }
