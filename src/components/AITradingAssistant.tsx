@@ -30,8 +30,7 @@ interface Props {
   myOrders: Order[];
 }
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+const API_BASE = "/api";
 
 const confidenceColor = {
   high:   'text-buy border-buy/30 bg-buy/5',
@@ -129,9 +128,9 @@ export function AITradingAssistant({ pair, orderBook, myOrders }: Props) {
     setSuggestions([]);
 
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ai-trading-assistant`, {
+      const res = await fetch(`${API_BASE}/ai-trading-assistant`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           pair: buildContext().pair,
           bids: orderBook.bids, asks: orderBook.asks,
@@ -164,9 +163,9 @@ export function AITradingAssistant({ pair, orderBook, myOrders }: Props) {
     setChatStreaming(true);
 
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ai-trading-chat`, {
+      const res = await fetch(`${API_BASE}/ai-trading-chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ANON_KEY}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: nextHistory, context: buildContext() }),
       });
 
