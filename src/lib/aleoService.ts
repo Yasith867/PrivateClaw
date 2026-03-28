@@ -1,6 +1,8 @@
 import type { TransactionOptions } from '@provablehq/aleo-types';
 
-const PROGRAM_ID = 'private_claw.aleo';
+// The deployed Leo program on Aleo Testnet
+export const PROGRAM_ID = 'private_claw.aleo';
+
 const API_BASE_URL = 'https://api.provable.com/v2/testnet';
 
 export class AleoService {
@@ -37,10 +39,8 @@ export class AleoService {
   }
 
   /**
-   * place_bet — place_bet transition on prediction_marketv01.aleo
-   *   input r0 as field.public;   ← market_id
-   *   input r1 as field.public;   ← outcome_id (1field = buy, 2field = sell)
-   *   input r2 as u64.private;    ← amount in microcredits
+   * place_bet — calls the place_bet transition on private_claw.aleo
+   *   amount: u64  ← order size in microcredits (private — hidden on-chain)
    */
   createPlaceOrderTransaction(
     _publicKey: string,
