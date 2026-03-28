@@ -33,6 +33,14 @@ program private_claw.aleo {
 }
 ```
 
+## Aleo Contract
+
+Program: private_claw.aleo  
+Functions:
+- place_bet(amount: u64)
+
+This contract simulates private betting logic using Aleo's zero-knowledge execution model.
+
 ## How it works
 
 Users connect their Shield Wallet and submit a private transaction using the Leo contract. The order amount is kept private on-chain — only the user with their private key can view it.
