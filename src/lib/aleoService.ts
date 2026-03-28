@@ -1,6 +1,6 @@
 import type { TransactionOptions } from '@provablehq/aleo-types';
 
-const PROGRAM_ID = 'prediction_marketv01.aleo';
+const PROGRAM_ID = 'private_claw.aleo';
 const API_BASE_URL = 'https://api.provable.com/v2/testnet';
 
 export class AleoService {

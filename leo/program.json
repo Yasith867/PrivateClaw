@@ -1,0 +1,6 @@
+{
+  "program": "private_claw.aleo",
+  "version": "0.0.1",
+  "description": "PrivateClaw — privacy-first limit order DEX on Aleo",
+  "license": "MIT"
+}

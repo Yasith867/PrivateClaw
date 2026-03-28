@@ -1,179 +1,170 @@
-# PrivateClaw
+# PrivateClaw — Privacy-First Limit Order DEX on Aleo
 
-A privacy-first limit order DEX built on the Aleo blockchain — where order sizes, balances, and trading strategies stay encrypted on-chain using zero-knowledge proofs.
-
----
-
-## Overview
-
-PrivateClaw is a limit order book DEX where privacy is a core primitive, not an afterthought. Powered by Aleo's ZK smart contracts, trades are cryptographically private while remaining trustlessly verifiable on-chain. Only aggregated price levels are ever publicly visible.
+PrivateClaw is a decentralized exchange (DEX) built on the [Aleo blockchain](https://aleo.org) using **ZK proofs** for maximum order privacy. Order sizes, balances, and trading strategies stay encrypted on-chain — only aggregated price levels are ever public.
 
 ---
 
-## Core Principles
+## Architecture
 
-- **Encrypted Orders** — Individual order sizes are encrypted on-chain via `u64.private`
-- **Private Balances** — Account balances are never publicly exposed
-- **ZK Settlement** — Trade execution is validated through zero-knowledge transitions
-- **Non-Custodial** — Users retain full control of their keys and funds
-- **AI-Assisted Trading** — On-chain privacy combined with off-chain AI market analysis
-
----
-
-## Tech Stack
-
-| Layer | Technology |
+| Layer | Tech |
 |---|---|
-| Frontend | React 18, TypeScript, Vite |
-| Styling | Tailwind CSS, shadcn/ui |
-| State Management | Zustand, TanStack Query |
-| Blockchain | Aleo Testnet |
-| Smart Contracts | Leo (`prediction_marketv01.aleo`) |
-| Wallet | Shield Wallet (`@provablehq/aleo-wallet-adaptor-shield`) |
-| AI Assistant | Cloudflare Workers AI (Llama 3.1 8B) |
-| Backend API | Express (dev) / Vercel Serverless + Edge Functions (prod) |
+| Frontend | React 18 + Vite + TypeScript |
+| Styling | Tailwind CSS + shadcn/ui |
+| Wallet | Shield Wallet via `@provablehq/aleo-wallet-adaptor-react` |
+| Smart Contract | Leo (`private_claw.aleo`) |
+| AI Assistant | Cloudflare AI (Llama 3.1 8B) |
+| Backend API | Express.js |
 
 ---
 
-## Smart Contract
+## Leo Smart Contract
 
-**Program:** `prediction_marketv01.aleo`
-Running on Aleo Testnet.
+Located at `leo/src/main.leo`. Deploy to **Aleo Testnet** as `private_claw.aleo`.
 
 ### Transitions
 
-| Transition | Description |
-|---|---|
-| `create_market` | Lists a new trading pair on-chain |
-| `place_bet` | Places a private buy or sell limit order |
-| `cancel_order` | Cancels an open private order |
-| `settle_trade` | Matches and privately settles orders |
-
-### `place_bet` Inputs
-```
-input r0 as field.public;   // market_id
-input r1 as field.public;   // outcome_id (1field = buy, 2field = sell)
-input r2 as u64.private;    // order amount (encrypted)
+#### `place_bet` — Place a private limit order
+```leo
+transition place_bet(
+    public market_id as field,   // Trading pair identifier
+    public side as field,        // 1field = buy, 2field = sell
+    private amount as u64        // Order size in microcredits (stays private on-chain)
+) -> Order
 ```
 
-Order amounts are encrypted via `u64.private`. Limit pricing is handled client-side — no price is ever written publicly on-chain.
-
----
-
-## Features
-
-- Live aggregated order book (individual sizes never revealed)
-- OHLCV candlestick chart (mock data on Testnet)
-- Trade history with privacy-preserving display
-- Portfolio dashboard with order tracking
-- Transaction lifecycle monitoring
-- On-chain trading pair creation
-- **AI Trading Assistant** — market analysis + streaming chat powered by Cloudflare AI
-- Dark / Light mode
-
----
-
-## AI Trading Assistant
-
-The AI Trading Assistant analyzes the live order book and provides:
-
-- **Suggestions tab** — 2–4 actionable buy/sell suggestions with confidence ratings
-- **Ask AI tab** — streaming chat to ask anything about the current market
-
-Powered by **Cloudflare Workers AI** (Llama 3.1 8B Instruct) via the free REST API.
-Every AI suggestion still requires explicit Shield Wallet approval before execution.
-
----
-
-## Transaction Lifecycle
-
-1. User configures order in the UI
-2. Shield Wallet prompts for approval
-3. Transaction is broadcast to Aleo Testnet
-4. Background poller monitors confirmation status
-5. On confirmation, order state updates in the UI
-6. Failed or expired transactions are flagged accordingly
-
----
-
-## Project Structure
-
+#### `cancel_order` — Cancel an existing private order record
+```leo
+transition cancel_order(order: Order) -> bool
 ```
-├── api/
-│   ├── ai-trading-assistant.ts   # Vercel serverless — market suggestions
-│   └── ai-trading-chat.ts        # Vercel edge — streaming chat
-├── server/
-│   └── index.ts                  # Express dev server (local only)
-├── src/
-│   ├── components/
-│   │   ├── AITradingAssistant.tsx
-│   │   ├── WalletProvider.tsx
-│   │   ├── PlaceOrderPanel.tsx
-│   │   └── ...
-│   ├── lib/
-│   │   ├── aleoService.ts        # ZK transaction builder
-│   │   ├── mockData.ts
-│   │   ├── schema.ts
-│   │   └── store.ts
-│   └── pages/
-│       ├── Index.tsx
-│       ├── MarketDetail.tsx
-│       └── Portfolio.tsx
-└── vercel.json
+
+#### `create_market` — List a new trading pair
+```leo
+transition create_market(
+    public market_id as field,
+    public resolution_timestamp as u64,
+    public num_outcomes as u8,
+) -> bool
+```
+
+### Order Record (private on-chain)
+```leo
+record Order:
+    owner as address.private;
+    market_id as field.private;
+    side as field.private;
+    amount as u64.private;
 ```
 
 ---
 
-## Getting Started
+## Build & Deploy the Leo Contract
 
 ### Prerequisites
+- [Rust stable](https://rustup.rs/) >= 1.88
+- Leo CLI: `cargo install leo-lang`
+- Aleo CLI: `cargo install aleo`
 
-- Node.js v18+
-- [Shield Wallet](https://shieldwallet.app) browser extension
-- Aleo Testnet credits
-
-### Local Development
-
+### Build
 ```bash
-git clone https://github.com/Yasith867/PrivateClaw
-cd PrivateClaw
+cd leo
+leo build
+```
+
+### Run locally (no wallet required)
+```bash
+# Place a buy order of 500,000 microcredits on market 42
+leo run place_bet 42field 1field 500000u64
+```
+
+Expected output:
+```
+• place_bet: { owner: aleo1..., market_id: 42field, side: 1field, amount: 500000u64 }
+```
+
+### Deploy to Aleo Testnet
+```bash
+# Get testnet credits at: https://faucet.aleo.org
+
+export ALEO_PRIVATE_KEY="APrivateKey1..."
+
+cd leo
+aleo deploy private_claw.aleo \
+  --private-key $ALEO_PRIVATE_KEY \
+  --query "https://api.provable.com/v2/testnet" \
+  --broadcast "https://api.provable.com/v2/testnet/transaction/broadcast"
+```
+
+After deployment the program is live at:
+`https://explorer.aleo.org/program/private_claw.aleo`
+
+---
+
+## Frontend
+
+### Development
+```bash
 npm install
 npm run dev
 ```
 
-Visit `http://localhost:5000`
+Opens at [http://localhost:5000](http://localhost:5000)
 
 ### Environment Variables
+Create a `.env` file (or add as Replit Secrets):
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+CLOUDFLARE_API_TOKEN=your_cloudflare_token
+CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id
+```
 
-| Variable | Description |
-|---|---|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers AI permission |
-| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID |
+### Testing the UI
+1. Install [Shield Wallet](https://shieldwallet.app) browser extension
+2. Create/import an Aleo Testnet account
+3. Get Testnet credits from [faucet.aleo.org](https://faucet.aleo.org)
+4. Open the app → click **Select Wallet** → connect Shield Wallet
+5. Pick a trading pair → click **Trade** → fill in price & size → **Buy** or **Sell**
+6. Shield Wallet prompts you to approve the `place_bet` transaction
+7. Your order size stays **private** on-chain — only you can view it with your key
 
 ---
 
-## Deploying to Vercel
-
-1. Import the repo at [vercel.com](https://vercel.com)
-2. Vercel auto-detects Vite — no settings need changing
-3. Add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` in Environment Variables
-4. Click **Deploy**
-
-The `api/` directory is automatically served as serverless/edge functions on Vercel.
+## Project Structure
+```
+/
+├── leo/
+│   ├── program.json             # Leo program metadata
+│   └── src/
+│       └── main.leo             # Smart contract (place_bet, cancel_order, create_market)
+├── src/
+│   ├── components/
+│   │   ├── WalletProvider.tsx   # Shield Wallet adapter + connect button
+│   │   ├── BettingModal.tsx     # Place/cancel order UI -> calls place_bet
+│   │   ├── Header.tsx           # Navigation + wallet button
+│   │   └── ...
+│   ├── lib/
+│   │   ├── aleoService.ts       # Builds TransactionOptions for each Leo transition
+│   │   └── store.ts             # Zustand global state
+│   └── pages/
+│       ├── Index.tsx            # Trade page (order book, chart, AI assistant)
+│       └── Portfolio.tsx        # My open orders page
+├── server/
+│   └── index.ts                 # Express API: /api/ai-trading-assistant & chat
+└── api/
+    └── ...                      # Legacy Vercel serverless functions (unused on Replit)
+```
 
 ---
 
 ## Privacy Model
 
-| Data | Visibility |
+All orders go through the `place_bet` Leo transition which returns an **`Order` record** stored in the caller's private state:
+
+| Field | Visibility |
 |---|---|
-| Aggregated price levels | Public |
-| Individual order size | Private (ZK encrypted) |
-| Account balance | Private |
-| Trader identity | Pseudonymous address |
+| Owner address | Private |
+| Market ID | Private |
+| Side (buy/sell) | Private |
+| Amount | Private |
 
----
-
-## License
-
-MIT
+Order book depth is derived from ZK-proven aggregates, not raw order data.
