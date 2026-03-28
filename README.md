@@ -71,39 +71,37 @@ This contract simulates private betting logic using Aleo's zero-knowledge execut
 
 ## Aleo Deployment Proof
 
-This project includes a fully functional Leo smart contract designed for Aleo Testnet deployment.
+Program Name: private_claw.aleo  
+Network: Aleo Testnet
 
-```
-Program ID : private_claw.aleo
-Network    : Aleo Testnet
-Execution  : via Shield Wallet
-Explorer   : https://explorer.aleo.org/program/private_claw.aleo
-```
+This project includes a fully functional Leo smart contract with multiple transitions:
 
-* The Leo contract at `/leo/src/main.leo` is syntactically valid and ready to build with `leo build`
-* The frontend integrates directly with Shield Wallet via `@provablehq/aleo-wallet-adaptor-react` for transaction execution
-* All three transitions (`validate_bet`, `place_bet`, `calculate_reward`) are wired into the frontend and can be simulated client-side or executed on-chain
-* `PROGRAM_ID = "private_claw.aleo"` is the single source of truth used throughout the codebase
+* validate_bet
+* place_bet
+* calculate_reward
 
-To deploy:
-```bash
-cd leo
-bash deploy.sh   # requires ALEO_PRIVATE_KEY in .env
-```
+Due to environment limitations, deployment is simulated through Shield Wallet integration and frontend transaction construction.
+
+All contract logic is written in Leo and structured for Aleo Testnet deployment.
+
+---
+
+## Why This Uses Aleo
+
+PrivateClaw leverages Aleo's zero-knowledge execution model to simulate private betting logic.
+
+All computations (validation, betting, and reward calculation) are designed to run privately via Leo smart contracts, ensuring that user inputs and financial data are not publicly exposed.
 
 ---
 
 ## How It Works
 
-1. User connects Shield Wallet using the "Select Wallet" button in the header
-2. User picks a trading pair and opens the Place Order modal
-3. User enters a bet amount (1 – 999,999 microcredits)
-4. User clicks **Validate Bet** — the frontend simulates `validate_bet` locally, mirroring the Leo contract logic exactly:
-   - Shows `validate_bet(amount) → true/false`
-   - Shows `place_bet(amount) → amount × 2` (computed output)
-   - Shows `calculate_reward(amount) → amount + 5` (reward preview)
-5. User clicks **Place Buy / Place Sell** — Shield Wallet opens to approve the `place_bet` transaction
-6. Transaction is broadcast to Aleo Testnet; the order amount stays **fully private** on-chain
+1. User connects Shield Wallet
+2. User enters bet amount
+3. User clicks action button
+4. Frontend calls Leo contract logic
+5. Logic executes privately (simulated)
+6. Result is displayed
 
 ---
 

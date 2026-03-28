@@ -1,6 +1,6 @@
 {
   "program": "private_claw.aleo",
   "version": "0.0.1",
-  "description": "PrivateClaw privacy contract",
+  "description": "PrivateClaw privacy smart contract using Aleo",
   "license": "MIT"
 }

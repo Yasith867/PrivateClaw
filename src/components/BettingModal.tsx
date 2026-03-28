@@ -17,12 +17,11 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type ValidationState = {
-  valid: boolean;
-  reason: string;
-  output: number | null;
+type SimResults = {
+  validate: { valid: boolean; reason: string } | null;
+  place: number | null;
   reward: number | null;
-} | null;
+};
 
 export function BettingModal() {
   const {
@@ -48,8 +47,8 @@ export function BettingModal() {
   const [orderAmount, setOrderAmount] = useState<number>(100_000);
   const [showAmount, setShowAmount] = useState(false);
 
-  const [isValidating, setIsValidating] = useState(false);
-  const [validation, setValidation] = useState<ValidationState>(null);
+  const [activeSimulation, setActiveSimulation] = useState<'validate' | 'place' | 'reward' | null>(null);
+  const [simResults, setSimResults] = useState<SimResults>({ validate: null, place: null, reward: null });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
@@ -62,36 +61,46 @@ export function BettingModal() {
     setPrice('');
     setBetAmount('50000');
     setOrderAmount(100_000);
-    setValidation(null);
+    setSimResults({ validate: null, place: null, reward: null });
+    setActiveSimulation(null);
     setTxId(null);
     setIsSubmitting(false);
   }, [setBettingModalOpen, setSelectedOutcomeId]);
 
   const effectiveSide: OrderSide = selectedOutcomeId === 'sell' ? 'sell' : 'buy';
 
-  // ─── Validate Bet (local simulation of Leo contract) ─────────────────────
-  const handleValidate = useCallback(() => {
-    setIsValidating(true);
-    setValidation(null);
-
+  const runSim = useCallback((type: 'validate' | 'place' | 'reward') => {
+    setActiveSimulation(type);
     const amount = parseInt(betAmount, 10);
 
-    // Simulate a brief processing delay for UX realism
     setTimeout(() => {
-      const { valid, reason } = aleoService.simulateValidateBet(amount);
-      const output = aleoService.simulatePlaceBet(amount);
-      const reward = aleoService.simulateCalculateReward(amount);
-
-      setValidation({ valid, reason, output, reward });
-      setIsValidating(false);
-
-      toast({
-        title: valid ? 'Bet Validated' : 'Validation Failed',
-        description: valid
-          ? `validate_bet(${amount}) → true`
-          : reason,
-        variant: valid ? 'default' : 'destructive',
-      });
+      if (type === 'validate') {
+        const { valid, reason } = aleoService.simulateValidateBet(amount);
+        setSimResults((prev) => ({ ...prev, validate: { valid, reason } }));
+        toast({
+          title: valid ? 'Bet Validated' : 'Validation Failed',
+          description: `validate_bet(${amount}u64) → ${valid}`,
+          variant: valid ? 'default' : 'destructive',
+        });
+      } else if (type === 'place') {
+        const output = aleoService.simulatePlaceBet(amount);
+        setSimResults((prev) => ({ ...prev, place: output }));
+        toast({
+          title: 'Place Bet Simulated',
+          description: `place_bet(${amount}u64) → ${output}u64`,
+        });
+      } else {
+        const reward = aleoService.simulateCalculateReward(amount);
+        setSimResults((prev) => ({ ...prev, reward }));
+        toast({
+          title: 'Reward Calculated',
+          description: reward !== null
+            ? `calculate_reward(${amount}u64) → ${reward}u64`
+            : 'Amount must be > 10 microcredits',
+          variant: reward !== null ? 'default' : 'destructive',
+        });
+      }
+      setActiveSimulation(null);
     }, 600);
   }, [betAmount, toast]);
 
@@ -152,6 +161,7 @@ export function BettingModal() {
 
   const isBuy = side === 'buy';
   const betAmountNum = parseInt(betAmount, 10) || 0;
+  const isBusy = activeSimulation !== null;
 
   return (
     <Dialog open={isBettingModalOpen} onOpenChange={handleClose}>
@@ -206,7 +216,7 @@ export function BettingModal() {
                   value={betAmount}
                   onChange={(e) => {
                     setBetAmount(e.target.value);
-                    setValidation(null);
+                    setSimResults({ validate: null, place: null, reward: null });
                   }}
                   placeholder="e.g. 50000"
                   className="font-mono bg-muted/50 border-border/50"
@@ -215,7 +225,10 @@ export function BettingModal() {
                   {[1_000, 50_000, 250_000, 750_000].map((v) => (
                     <button
                       key={v}
-                      onClick={() => { setBetAmount(String(v)); setValidation(null); }}
+                      onClick={() => {
+                        setBetAmount(String(v));
+                        setSimResults({ validate: null, place: null, reward: null });
+                      }}
                       className={cn(
                         'flex-1 py-0.5 text-[10px] rounded border border-border/50 hover:border-border transition-colors',
                         betAmountNum === v && 'border-primary text-primary',
@@ -227,72 +240,78 @@ export function BettingModal() {
                 </div>
               </div>
 
-              {/* Validate Bet button */}
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full gap-2 border-primary/40 text-primary hover:bg-primary/10 text-xs"
-                onClick={handleValidate}
-                disabled={isValidating || !betAmountNum}
-              >
-                {isValidating
-                  ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Running validate_bet…</>
-                  : <><Zap className="h-3.5 w-3.5" />Validate Bet</>
-                }
-              </Button>
+              {/* Three simulation buttons */}
+              <div className="grid grid-cols-3 gap-2">
+                {(
+                  [
+                    { key: 'validate', label: 'Validate Bet', icon: <Zap className="h-3 w-3" /> },
+                    { key: 'place',    label: 'Place Bet',    icon: <Shield className="h-3 w-3" /> },
+                    { key: 'reward',   label: 'Calculate Reward', icon: <Trophy className="h-3 w-3" /> },
+                  ] as const
+                ).map(({ key, label, icon }) => (
+                  <Button
+                    key={key}
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 border-primary/40 text-primary hover:bg-primary/10 text-[10px] px-2"
+                    onClick={() => runSim(key)}
+                    disabled={isBusy || !betAmountNum}
+                  >
+                    {activeSimulation === key
+                      ? <Loader2 className="h-3 w-3 animate-spin" />
+                      : icon
+                    }
+                    {label}
+                  </Button>
+                ))}
+              </div>
 
-              {/* Validation result */}
-              {validation && (
-                <div className="space-y-2 animate-fade-in">
-                  {/* validate_bet result */}
+              {/* Per-transition result rows */}
+              <div className="space-y-1.5">
+                {/* validate_bet */}
+                {simResults.validate && (
                   <div className={cn(
                     'flex items-center gap-2 p-2 rounded border text-xs',
-                    validation.valid
+                    simResults.validate.valid
                       ? 'bg-accent/10 border-accent/30 text-accent'
                       : 'bg-destructive/10 border-destructive/30 text-destructive',
                   )}>
-                    {validation.valid
+                    {simResults.validate.valid
                       ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
                       : <XCircle className="h-3.5 w-3.5 shrink-0" />
                     }
                     <span className="font-mono">
-                      validate_bet({betAmountNum}u64) → {String(validation.valid)}
+                      validate_bet({betAmountNum}u64) → {String(simResults.validate.valid)}
                     </span>
                   </div>
+                )}
 
-                  {validation.valid && validation.output !== null && (
-                    <>
-                      {/* place_bet output */}
-                      <div className="flex items-center gap-2 p-2 rounded border border-border/50 bg-muted/30 text-xs">
-                        <Shield className="h-3.5 w-3.5 text-primary shrink-0" />
-                        <span className="font-mono text-muted-foreground">
-                          place_bet({betAmountNum}u64) →{' '}
-                          <span className="text-foreground font-semibold">
-                            {validation.output.toLocaleString()}u64
-                          </span>
-                        </span>
-                      </div>
+                {/* place_bet */}
+                {simResults.place !== null && (
+                  <div className="flex items-center gap-2 p-2 rounded border border-border/50 bg-muted/30 text-xs">
+                    <Shield className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span className="font-mono text-muted-foreground">
+                      place_bet({betAmountNum}u64) →{' '}
+                      <span className="text-foreground font-semibold">
+                        {simResults.place.toLocaleString()}u64
+                      </span>
+                    </span>
+                  </div>
+                )}
 
-                      {/* calculate_reward output */}
-                      {validation.reward !== null && (
-                        <div className="flex items-center gap-2 p-2 rounded border border-border/50 bg-muted/30 text-xs">
-                          <Trophy className="h-3.5 w-3.5 text-yellow-400 shrink-0" />
-                          <span className="font-mono text-muted-foreground">
-                            calculate_reward({betAmountNum}u64) →{' '}
-                            <span className="text-yellow-400 font-semibold">
-                              {validation.reward.toLocaleString()}u64
-                            </span>
-                          </span>
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  {!validation.valid && (
-                    <p className="text-[10px] text-muted-foreground">{validation.reason}</p>
-                  )}
-                </div>
-              )}
+                {/* calculate_reward */}
+                {simResults.reward !== null && (
+                  <div className="flex items-center gap-2 p-2 rounded border border-border/50 bg-muted/30 text-xs">
+                    <Trophy className="h-3.5 w-3.5 text-yellow-400 shrink-0" />
+                    <span className="font-mono text-muted-foreground">
+                      calculate_reward({betAmountNum}u64) →{' '}
+                      <span className="text-yellow-400 font-semibold">
+                        {simResults.reward.toLocaleString()}u64
+                      </span>
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* ── Trade Order (Shield Wallet) ──────────────────────── */}
