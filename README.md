@@ -19,7 +19,7 @@ PrivateClaw is a decentralized exchange (DEX) built on the [Aleo blockchain](htt
 
 ## Leo Smart Contract
 
-Located at `leo/src/main.leo`. Deploy to **Aleo Testnet** as `private_claw.aleo`.
+Located at `leo/src/main.leo`. Program name: `private_claw.aleo`.
 
 ### Transitions
 
@@ -28,7 +28,7 @@ Located at `leo/src/main.leo`. Deploy to **Aleo Testnet** as `private_claw.aleo`
 transition place_bet(
     public market_id as field,   // Trading pair identifier
     public side as field,        // 1field = buy, 2field = sell
-    private amount as u64        // Order size in microcredits (stays private on-chain)
+    private amount as u64        // Order size in microcredits — hidden on-chain
 ) -> Order
 ```
 
@@ -46,7 +46,7 @@ transition create_market(
 ) -> bool
 ```
 
-### Order Record (private on-chain)
+### Order Record (fully private on-chain)
 ```leo
 record Order:
     owner as address.private;
@@ -57,45 +57,137 @@ record Order:
 
 ---
 
-## Build & Deploy the Leo Contract
+## Deployment
 
 ### Prerequisites
-- [Rust stable](https://rustup.rs/) >= 1.88
-- Leo CLI: `cargo install leo-lang`
-- Aleo CLI: `cargo install aleo`
 
-### Build
+Install the Aleo toolchain (requires Rust 1.88+):
+
+```bash
+# Install Rust (if not already installed)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Install Leo CLI
+cargo install leo-lang
+
+# Install Aleo CLI
+cargo install aleo
+```
+
+### Step 1 — Set up your environment
+
+Copy the example env file and fill in your private key:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env`:
+```env
+# Replace with your real Aleo private key — NEVER share this or commit it
+ALEO_PRIVATE_KEY=YOUR_PRIVATE_KEY_HERE
+```
+
+Generate a new account if you don't have one:
+```bash
+leo account new
+# Output:
+#   Private Key  APrivateKey1...   ← paste this into .env
+#   View Key     AViewKey1...
+#   Address      aleo1...          ← use this to get testnet credits
+```
+
+Get testnet credits (you need at least 10 ALEO to deploy):
+```
+https://faucet.aleo.org
+```
+Paste your `aleo1...` address and request credits.
+
+---
+
+### Step 2 — Build the contract
+
 ```bash
 cd leo
 leo build
 ```
 
-### Run locally (no wallet required)
+Expected output:
+```
+     Leo ✅ Compiled 'main.leo' into Aleo instructions
+  Aleo ✅ Built 'private_claw.aleo' (in "build")
+```
+
+---
+
+### Step 3 — Run local test
+
 ```bash
-# Place a buy order of 500,000 microcredits on market 42
 leo run place_bet 42field 1field 500000u64
 ```
 
 Expected output:
 ```
-• place_bet: { owner: aleo1..., market_id: 42field, side: 1field, amount: 500000u64 }
+ • place_bet:
+   Output: {
+     owner: aleo1...,
+     market_id: 42field,
+     side: 1field,
+     amount: 500000u64
+   }
 ```
 
-### Deploy to Aleo Testnet
+- `42field` — market/pair ID
+- `1field` — buy side (use `2field` for sell)
+- `500000u64` — 0.5 ALEO in microcredits
+
+---
+
+### Step 4 — Deploy to Aleo Testnet
+
+**Option A — use the deploy script (recommended):**
 ```bash
-# Get testnet credits at: https://faucet.aleo.org
-
-export ALEO_PRIVATE_KEY="APrivateKey1..."
-
 cd leo
+bash deploy.sh
+```
+
+The script will validate your key, build, test, and deploy automatically.
+
+**Option B — manual deploy:**
+```bash
+cd leo
+source ../.env     # loads ALEO_PRIVATE_KEY
+
 aleo deploy private_claw.aleo \
-  --private-key $ALEO_PRIVATE_KEY \
+  --private-key "$ALEO_PRIVATE_KEY" \
   --query "https://api.provable.com/v2/testnet" \
   --broadcast "https://api.provable.com/v2/testnet/transaction/broadcast"
 ```
 
-After deployment the program is live at:
-`https://explorer.aleo.org/program/private_claw.aleo`
+Expected output after successful deployment:
+```
+⏳ Attempting to deploy 'private_claw.aleo'...
+✅ Successfully deployed 'private_claw.aleo' at transaction:
+   at1abc...xyz
+```
+
+View your deployed program:
+```
+https://explorer.aleo.org/program/private_claw.aleo
+```
+
+> **Note:** Deployment costs ~10 ALEO in testnet credits. The transaction takes ~30 seconds to confirm.
+
+---
+
+### Security Rules
+
+| Rule | Why |
+|---|---|
+| Never hardcode your private key | Anyone who sees it can steal your funds |
+| Keep `.env` out of git (it's in `.gitignore`) | Prevents accidental key exposure |
+| Use `.env.example` for documentation | Safe to commit — contains no real values |
+| Rotate your key after any exposure | Treat it like a password |
 
 ---
 
@@ -110,12 +202,13 @@ npm run dev
 Opens at [http://localhost:5000](http://localhost:5000)
 
 ### Environment Variables
-Create a `.env` file (or add as Replit Secrets):
+Fill in `.env` (copy from `.env.example`):
 ```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
-CLOUDFLARE_API_TOKEN=your_cloudflare_token
-CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id
+ALEO_PRIVATE_KEY=YOUR_PRIVATE_KEY_HERE
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your_anon_key
+CLOUDFLARE_API_TOKEN=your_cf_token
+CLOUDFLARE_ACCOUNT_ID=your_cf_account_id
 ```
 
 ### Testing the UI
@@ -132,26 +225,29 @@ CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id
 ## Project Structure
 ```
 /
+├── .env.example              ← copy to .env, fill in real values
+├── .gitignore                ← .env is excluded from git
 ├── leo/
-│   ├── program.json             # Leo program metadata
+│   ├── program.json          ← Leo program metadata
+│   ├── deploy.sh             ← automated build + deploy script
 │   └── src/
-│       └── main.leo             # Smart contract (place_bet, cancel_order, create_market)
+│       └── main.leo          ← smart contract (place_bet, cancel_order, create_market)
 ├── src/
 │   ├── components/
-│   │   ├── WalletProvider.tsx   # Shield Wallet adapter + connect button
-│   │   ├── BettingModal.tsx     # Place/cancel order UI -> calls place_bet
-│   │   ├── Header.tsx           # Navigation + wallet button
+│   │   ├── WalletProvider.tsx   ← Shield Wallet adapter + connect button
+│   │   ├── BettingModal.tsx     ← place/cancel order UI -> calls place_bet
+│   │   ├── Header.tsx           ← navigation + wallet button
 │   │   └── ...
 │   ├── lib/
-│   │   ├── aleoService.ts       # Builds TransactionOptions for each Leo transition
-│   │   └── store.ts             # Zustand global state
+│   │   ├── aleoService.ts       ← builds TransactionOptions for each Leo transition
+│   │   └── store.ts             ← Zustand global state
 │   └── pages/
-│       ├── Index.tsx            # Trade page (order book, chart, AI assistant)
-│       └── Portfolio.tsx        # My open orders page
+│       ├── Index.tsx            ← trade page (order book, chart, AI assistant)
+│       └── Portfolio.tsx        ← my open orders page
 ├── server/
-│   └── index.ts                 # Express API: /api/ai-trading-assistant & chat
+│   └── index.ts                 ← Express API: /api/ai-trading-assistant & chat
 └── api/
-    └── ...                      # Legacy Vercel serverless functions (unused on Replit)
+    └── ...                      ← legacy Vercel serverless functions (unused on Replit)
 ```
 
 ---
@@ -167,4 +263,4 @@ All orders go through the `place_bet` Leo transition which returns an **`Order` 
 | Side (buy/sell) | Private |
 | Amount | Private |
 
-Order book depth is derived from ZK-proven aggregates, not raw order data.
+Order book depth is derived from ZK-proven aggregates — raw order data is never exposed.
